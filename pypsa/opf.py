@@ -981,7 +981,7 @@ def extract_optimisation_results(network, snapshots, formulation="angles"):
 def network_lopf(network, snapshots=None, solver_name="glpk", solver_io=None,
                  skip_pre=False, extra_functionality=None, solver_options={},
                  keep_files=False, formulation="angles", ptdf_tolerance=0.,
-                 free_memory={}):
+                 free_memory={}, load_shed=False):
     """
     Linear optimal power flow for a group of snapshots.
 
@@ -1025,6 +1025,20 @@ def network_lopf(network, snapshots=None, solver_name="glpk", solver_io=None,
     -------
     None
     """
+
+    if load_shed is True:
+
+        network.add("Carrier", "load")
+        network.import_components_from_dataframe(
+        pd.DataFrame(
+        dict(marginal_cost=network.generators.marginal_cost.max()*2,
+        p_nom=network.loads_t.p_set.max().max(),
+        carrier='load shedding',
+        bus=network.buses.index),
+        index=network.buses.index + ' load'),
+        "Generator"
+        )
+
 
     if not skip_pre:
         network.determine_network_topology()
